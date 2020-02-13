@@ -25,6 +25,9 @@ print('Currently used templates: ' + str(f.getTemplateCount()) + '/' + str(f.get
 
 ## Tries to enroll a new finger
 try:
+        print('Please enter name of student...')
+        name = input()
+        fullName = name.split(" ")
         print('Waiting for finger...')
 
         #Wait that finger is read
@@ -65,10 +68,11 @@ try:
 
         ##Saves template at new position number
         positionNumber = f.storeTemplate()
+        characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
         print('Finger enrolled successfully')
         print('New template position #' + str(positionNumber))
 
-        r = requests.get('http://192.168.1.192:3000/api/attendance')
+        r = requests.post('http://192.168.1.192:3000/api/attendance',{'fName':fullName[0],'lName':fullName[1],'fingerprint':characteristics})
         print(r.text)
 
 except Exception as e:
