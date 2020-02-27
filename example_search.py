@@ -7,7 +7,7 @@ Copyright (C) 2015 Bastian Raschke <bastian.raschke@posteo.de>
 All rights reserved.
 
 """
-
+import requests
 import hashlib
 from pyfingerprint.pyfingerprint import PyFingerprint
 
@@ -32,6 +32,7 @@ print('Currently used templates: ' + str(f.getTemplateCount()) +'/'+ str(f.getSt
 
 ## Tries to search the finger and calculate hash
 try:
+    ID = input("Please enter your student id...")
     print('Waiting for finger...')
 
     ## Wait that finger is read
@@ -42,31 +43,33 @@ try:
     f.convertImage(0x01)
 
     ## Searchs template
-    result = f.searchTemplate()
+    ##result = f.searchTemplate()
+    ##positionNumber = result[0]
+    ##accuracyScore = result[1]
 
-    positionNumber = result[0]
-    accuracyScore = result[1]
-
-    if ( positionNumber == -1 ):
-        print('No match found!')
-        exit(0)
-    else:
-        print('Found template at position #' + str(positionNumber))
-        print('The accuracy score is: ' + str(accuracyScore))
+    ##if ( positionNumber == -1 ):
+      ##  print('No match found!')
+       ## exit(0)
+    ##else:
+      ##  print('Found template at position #' + str(positionNumber))
+       ## print('The accuracy score is: ' + str(accuracyScore))
 
     ## OPTIONAL stuff
     ##
 
     ## Loads the found template to charbuffer 1
-    f.loadTemplate(positionNumber, 0x01)
+   ## f.loadTemplate(positionNumber, 0x01)
 
     ## Downloads the characteristics of template loaded in charbuffer 1
-    print(len(f.downloadCharacteristics(0x01)))
+    ##print(len(f.downloadCharacteristics(0x01)))
     characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
     print(characteristics)
+    print("Searching..")
     ## Hashes characteristics of template
-    print('SHA-2 hash of template: ' + hashlib.sha256(characteristics).hexdigest())
-
+    ##print('SHA-2 hash of template: ' + hashlib.sha256(characteristics).hexdigest())
+    payload = {'studentID':str(ID),'fingerprint':characteristics}
+    r = requests.post('http://172.16.190.254:5000/api/fingerprint/search',json = payload)
+    print(r.text)
 except Exception as e:
     print('Operation failed!')
     print('Exception message: ' + str(e))
