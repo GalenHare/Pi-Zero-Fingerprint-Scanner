@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""
-PyFingerprint
+"""PyFingerprint
 Copyright (C) 2015 Bastian Raschke <bastian.raschke@posteo.de>
 All rights reserved.
 
@@ -45,23 +41,15 @@ try:
     scannedFinger = f.downloadCharacteristics(0x01)
     characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
     print(scannedFinger)
-    ## Searchs template
-    result = f.searchTemplate()
-    positionNumber = result[0]
-    accuracyScore = result[1]
 
-    if ( positionNumber == -1 ):
-        print('No match found!')
-        exit(0)
-    else:
-        print('Found template at position #' + str(positionNumber))
-        print('The accuracy score is: ' + str(accuracyScore))
-
+    f.loadTemplate(1,0x02)
+    score = f.compareCharacteristics()
+    print("Accuracy score: " + str(score))
     ## OPTIONAL stuff
     ##
 
-    +## Loads the found template to charbuffer 1
-    f.loadTemplate(positionNumber, 0x01)
+    ## Loads the found template to charbuffer 1
+    f.loadTemplate(1, 0x01)
 
     ## Downloads the characteristics of template loaded in charbuffer 1
     print(len(f.downloadCharacteristics(0x01)))
@@ -73,7 +61,7 @@ try:
     print('SHA-2 hash of template: ' + hashlib.sha256(characteristics).hexdigest())
     sum = 0
     for x in range(0,len(scannedFinger)):
-        if(scannedFinger[x]> storedFinger[x]-1 and scannedFinger[x]<storedFinger[x]+1 and scannedFinger[x]!= 0):
+        if(scannedFinger[x]== storedFinger[x] and scannedFinger[x]!= 0):
             sum = sum + 1
     print("Calculated accuracy score: " + str(sum))
     

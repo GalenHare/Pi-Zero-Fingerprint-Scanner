@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+ x#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import time
@@ -25,8 +25,8 @@ print('Currently used templates: ' + str(f.getTemplateCount()) + '/' + str(f.get
 
 ## Tries to enroll a new finger
 try:
-        print('Please enter ID of student...')
-        ID = input()
+        ##print('Please enter ID of student...')
+        ##ID = input()
         print('Waiting for finger...')
 
         #Wait that finger is read
@@ -66,12 +66,13 @@ try:
         f.createTemplate()
 
         ##Saves template at new position number
-        ##positionNumber = f.storeTemplate()
+        positionNumber = f.storeTemplate()
         characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
-        ##print('New template position #' + str(positionNumber))
-        payload = {'studentID':str(ID),'fingerprint':characteristics}
-        r = requests.post('http://172.16.190.254:5000/api/fingerprint',json = payload)
-        print(r.text)
+        print(characteristics)
+        print('New template position #' + str(positionNumber))
+        ##payload = {'studentID':str(ID),'fingerprint':characteristics}
+        ##r = requests.post('http://172.16.190.254:5000/api/fingerprint',json = payload)
+        ##print(r.text)
 
 except Exception as e:
         print('Operation failed')
