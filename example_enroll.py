@@ -1,4 +1,4 @@
- x#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import time
@@ -24,58 +24,60 @@ except Exception as e:
 print('Currently used templates: ' + str(f.getTemplateCount()) + '/' + str(f.getStorageCapacity()))
 
 ## Tries to enroll a new finger
-try:
-        ##print('Please enter ID of student...')
-        ##ID = input()
-        print('Waiting for finger...')
+while(true):
+        try:
+                print('Please enter ID of student...')
+                ID = input()
+                print('Waiting for finger...')
 
-        #Wait that finger is read
-        while(f.readImage() == False):
-                pass
+                #Wait that finger is read
+                while(f.readImage() == False):
+                        pass
 
-        ## Converts read image to characteristics and stored it in charbuffer 1
-        f.convertImage(0x01)
+                ## Converts read image to characteristics and stored it in charbuffer 1
+                f.convertImage(0x01)
 
-        #Checks if finger is already enrolled
-        result = f.searchTemplate()
-        positionNumber = result[0]
+                #Checks if finger is already enrolled
+                result = f.searchTemplate()
+                positionNumber = result[0]
 
-        if (positionNumber >= 0):
-                print('Template already exists at postition #' + str(positionNumber))
-                exit(0)
+                if (positionNumber >= 0):
+                        print('Template already exists at postition #' + str(positionNumber))
+                        exit(0)
 
 
-        print('Remove finger...')
-        time.sleep(2)
+                print('Remove finger...')
+                time.sleep(2)
 
-        print('Place same finger...')
+                print('Place same finger...')
 
-        #Wait until that finger is read again
-        while(f.readImage() == False):
-                pass
+                #Wait until that finger is read again
+                while(f.readImage() == False):
+                        pass
 
-        ##Converts read image to characterisitics and stored it in charbuffer 2
-        
-        f.convertImage(0x02)
+                ##Converts read image to characterisitics and stored it in charbuffer 2
+                
+                f.convertImage(0x02)
 
-        ## Compares the charbuffers
-        if( f.compareCharacteristics() == 0):
-                raise Exception('Fingers do not match')
+                ## Compares the charbuffers
+                if( f.compareCharacteristics() == 0):
+                        raise Exception('Fingers do not match')
 
-        ##Creates a template
-        f.createTemplate()
+                ##Creates a template
+                f.createTemplate()
 
-        ##Saves template at new position number
-        positionNumber = f.storeTemplate()
-        characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
-        print(characteristics)
-        print('New template position #' + str(positionNumber))
-        ##payload = {'studentID':str(ID),'fingerprint':characteristics}
-        ##r = requests.post('http://172.16.190.254:5000/api/fingerprint',json = payload)
-        ##print(r.text)
+                ##Saves template at new position number
+                positionNumber = f.storeTemplate()
+                characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
+                print(characteristics)
+                print('New template position #' + str(positionNumber))
+                payload = {'studentID':str(ID),'fingerprint':characteristics}
+                r = requests.post('http://172.16.188.62:5000/api/fingerprint',json = payload)
+                r.raise_for_status()
+                print(r.text)
 
-except Exception as e:
-        print('Operation failed')
-        print('Exception message: ' + str(e))
-        exit(1)
+        except Exception as e:
+                print('Operation failed')
+                print('Exception message: ' + str(e))
+                exit(1)
         
