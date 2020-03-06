@@ -1,4 +1,4 @@
-"""PyFingerprint
+"""PyFingerprint cvx
 Copyright (C) 2015 Bastian Raschke <bastian.raschke@posteo.de>
 All rights reserved.
 
@@ -23,14 +23,14 @@ except Exception as e:
     print('Exception message: ' + str(e))
     exit(1)
 
-while(true):
+while(True):
     try:
         ID = input("Please enter ID of student")
-        url = 'http://172.16.190.254:5000/api/fingerprint/' + str(ID)
+        url = 'http://172.16.188.44:5000/api/fingerprint/' + str(ID)
         r = requests.get(url)
         r.raise_for_status()
-        print(r.text)
-        response = r.json
+        response = r.json()
+        #print(response)
         print('Waiting for finger...')  
 
         ## Wait that finger is read
@@ -42,11 +42,23 @@ while(true):
         print("Input finger")
         scannedFinger = f.downloadCharacteristics(0x01)
         characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
+        print("SCANNED FINGER")
         print(scannedFinger)
-        result,score = findFinger(response)
-        if (result != 0):
+        print("====================================================")
+        for x in response:
+          #  print(x)
+            temp = x["fingerprint"].split(", ")
+            temp[0] = temp[0].split("[")[1]
+            temp[len(temp)-1] = temp[len(temp)-1].split("]")[0]
+            results = list(map(int, temp))
+            print (results) 
+            f.uploadCharacteristics(0x02,results)
+            score = f.compareCharacteristics()
+            if(score > 0):
+                break 
+        if (score != 0):
             print("Finger found!")
-            print(result)
+            print(results)
             print("With an accuracy score: "+ str(score))
         else:
             print("Finger not found")
@@ -56,14 +68,4 @@ while(true):
         exit(1)
 
 
-def findFinger(response):
-    for x in response:
-        temp = x["fingerprint"].split(", ")
-        temp[0] = temp[0].split("[")[1]
-        temp[temp.length-1] = temp[temp.length-1].split("]")[0]
-        results = list(map(int, results))
-        f.uploadCharacteristics(0x02,results)
-        score = f.compareCharacteristics()
-        if(score > 0):
-            return x,score
-    return 0 
+

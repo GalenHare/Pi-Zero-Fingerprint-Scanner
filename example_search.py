@@ -60,7 +60,7 @@ try:
     ## OPTIONAL stuff
     ##
 
-    +## Loads the found template to charbuffer 1
+    ## Loads the found template to charbuffer 1
     f.loadTemplate(positionNumber, 0x01)
 
     ## Downloads the characteristics of template loaded in charbuffer 1

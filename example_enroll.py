@@ -24,7 +24,7 @@ except Exception as e:
 print('Currently used templates: ' + str(f.getTemplateCount()) + '/' + str(f.getStorageCapacity()))
 
 ## Tries to enroll a new finger
-while(true):
+while(True):
         try:
                 print('Please enter ID of student...')
                 ID = input()
@@ -67,17 +67,17 @@ while(true):
                 f.createTemplate()
 
                 ##Saves template at new position number
-                positionNumber = f.storeTemplate()
+                #positionNumber = f.storeTemplate()
                 characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
                 print(characteristics)
                 print('New template position #' + str(positionNumber))
                 payload = {'studentID':str(ID),'fingerprint':characteristics}
-                r = requests.post('http://172.16.188.62:5000/api/fingerprint',json = payload)
+                r = requests.post('http://172.16.188.44:5000/api/fingerprint',json = payload)
                 r.raise_for_status()
                 print(r.text)
 
         except Exception as e:
                 print('Operation failed')
                 print('Exception message: ' + str(e))
-                exit(1)
+                # exit(1)
         
