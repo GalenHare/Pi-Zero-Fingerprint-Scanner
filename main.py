@@ -1,5 +1,6 @@
 import requests
 import hashlib
+import time
 from pyfingerprint.pyfingerprint import PyFingerprint
 
 
@@ -10,21 +11,21 @@ def main():
         try:
             print("Welcome to the the Registration Authentiction Unit")
             selection = None
-            while(selection != 1 or selection != 2):
+            while(selection != "1" and selection != "2"):
                 print("Please select an option from below")
                 print("\t1:Enroll a fingerprint\n\t2:Mark Attendance")
                 ##TODO: Ensure admin user before enrolling a fingerprint
                 selection = input()
-                if(selection != 1 or selection != 2):
+                if(selection != "1" and selection != "2"):
                     print("Invalid selection please try again")
-            if(selection == 1):
+            if(selection == "1"):
                 enrollFingerprint()
-            elif(selection == 2):
+            elif(selection == "2"):
                 markAttendance()
         except Exception as e:
             print('Operation failed!')
             print('Exception message: ' + str(e))
-            exit(1)
+           # exit(1)
 
 def initializeSensor():
     ## Tries to initialize the sensor
@@ -32,6 +33,7 @@ def initializeSensor():
     while(state == None):
         try:
             print("Initializing fingerprint sensor...")
+            global f
             f = PyFingerprint('/dev/ttyAMA0', 57600, 0xFFFFFFFF, 0x00000000) 
             if ( f.verifyPassword() == False ):
                 raise ValueError('The given fingerprint sensor password is wrong!')
@@ -70,9 +72,9 @@ def markAttendance():
         if(score > 0):
             break 
     if (score != 0):
+        print(results)
         print("Finger found!")
         print("With an accuracy score: "+ str(score))
-        print(results)
     else:
         print("Finger not found")
 
@@ -110,12 +112,12 @@ def enrollFingerprint():
     #positionNumber = f.storeTemplate()
     characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
     print(characteristics)
-    print('New template position #' + str(positionNumber))
+    #print('New template position #' + str(positionNumber)) 
     payload = {'studentID':str(ID),'fingerprint':characteristics}
     r = requests.post('http://192.168.0.12:5000/api/fingerprint',json = payload)
     r.raise_for_status()
-    print("Success")
     print(r.text)
+    print("Success")
 
 if __name__ == '__main__':
     main()
