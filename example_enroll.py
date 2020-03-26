@@ -72,8 +72,9 @@ while(True):
                 print(characteristics)
                 print('New template position #' + str(positionNumber))
                 payload = {'studentID':str(ID),'fingerprint':characteristics}
-                r = requests.post('http://172.16.188.44:5000/api/fingerprint',json = payload)
+                r = requests.post('http://192.168.0.12:5000/api/fingerprint',json = payload)
                 r.raise_for_status()
+                print("Success")
                 print(r.text)
 
         except Exception as e:
