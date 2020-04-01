@@ -1,8 +1,10 @@
 import requests
 import hashlib
 import time
+import datetime
 from pyfingerprint.pyfingerprint import PyFingerprint
 
+url = "http://192.168.0.3:5000/"
 
 ## Main program
 def main():
@@ -43,9 +45,9 @@ def initializeSensor():
             print('The fingerprint sensor could not be initialized!')
             print('Exception message: ' + str(e))
 def markAttendance():
-    ID = input("Please enter ID of student")
-    url = 'http://192.168.0.12:5000/api/fingerprint/' + str(ID)
-    r = requests.get(url)
+    ID = input("Please enter ID of student\n")
+    temp = url +'api/fingerprint/id/' + str(ID)
+    r = requests.get(temp)
     r.raise_for_status()
     response = r.json()
     #print(response)
@@ -75,6 +77,7 @@ def markAttendance():
         print(results)
         print("Finger found!")
         print("With an accuracy score: "+ str(score))
+        attendanceRequest(ID)
     else:
         print("Finger not found")
 
@@ -114,10 +117,53 @@ def enrollFingerprint():
     print(characteristics)
     #print('New template position #' + str(positionNumber)) 
     payload = {'studentID':str(ID),'fingerprint':characteristics}
-    r = requests.post('http://192.168.0.12:5000/api/fingerprint',json = payload)
+    r = requests.post(url+'api/fingerprint',json = payload)
     r.raise_for_status()
     print(r.text)
     print("Success")
 
+def attendanceRequest(id):
+    #TODO: Add exception handling for this function only
+    global currentDateTime
+    currentDateTime = datetime.datetime.now()
+    print("HERE")
+    if(timeParser('currentTimeMins')>int(endMinute) or timeParser('currentDay')!=int(endDay)):
+        courseCode,endDay,startMinute,endMinute = requestCourse()
+    payload = {'studentID':id,"date":timeParser('JSFormat'),'courseCode':courseCode} 
+    r = requests.post(url+'api/attendance',json = payload)
+    r.raise_for_status()
+    print(r.text)
+
+def requestCourse():
+    payload = {"_id":scannerID,"currentDate":'2020-03-25T14:00:00'}
+    """timeParser("JSFormat")"""
+    r = requests.get(url+'/api/scanner/course',params = payload)
+    r.raise_for_status()
+    response = r.json()
+    #TODO: add contingency for nothing returned as well as for multiple
+    return response['courseCode'],response['day'],response['startMinute'],response['endMinute']
+    
+    
+
+def timeParser(option):
+    if(option == 'currentTimeMins'):
+        return currentDateTime.hour * 60 + currentDateTime.minute
+    elif(option == 'currentDay'):
+        return int(currentDateTime.strftime("%w"))
+    elif(option == 'JSFormat'):
+        currentDateTime.strftime("%Y-%m-%dT%X")
 if __name__ == '__main__':
+    global scannerID
+    scannerID = 1
+    global endDay
+    endDay = -1
+    global endHour
+    endHour = -1
+    global endMinute
+    endMinute = -1
+    global courseCode
+    courseCode = 0
+    global startMinute
+    startMinute = -1
+    print(endMinute)
     main()
