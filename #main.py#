@@ -56,6 +56,8 @@ def markAttendance():
     r = requests.get(temp)
     r.raise_for_status()
     response = r.json()
+    if(response == []):
+        print(
     #print(response)
     print('Waiting for finger...')  
     ## Wait that finger is read
