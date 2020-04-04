@@ -2,10 +2,17 @@ import requests
 import hashlib
 import time
 import datetime
+import base64
+import hashlib
+from Crypto.Cipher import AES
+from Crypto import Random
 from pyfingerprint.pyfingerprint import PyFingerprint
 
-url = "http://192.168.0.2:5000/"
-
+url = "http://192.168.0.9:5000/"
+BLOCK_SIZE = 16
+pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
+unpad = lambda s: s[:-ord(s[len(s) - 1:])]
+password = "value1"
 scannerID = 1
 endDay = -1
 endHour = -1
@@ -34,6 +41,29 @@ def main():
  #           print('Operation failed!')
   #          print('Exception message: ' + str(e))
            # exit(1)
+# AES 256 encryption/decryption using pycrypto library 
+def encrypt(raw, password):
+    private_key = hashlib.sha256(password.encode("utf-8")).digest()
+    raw = pad(raw)
+    iv = Random.new().read(AES.block_size)
+    cipher = AES.new(private_key, AES.MODE_CBC, iv)
+    return base64.b64encode(iv + cipher.encrypt(raw))
+ 
+ 
+def decrypt(enc, password):
+    private_key = hashlib.sha256(password.encode("utf-8")).digest()
+    enc = base64.b64decode(enc)
+    iv = enc[:16]
+    cipher = AES.new(private_key, AES.MODE_CBC, iv)
+    return unpad(cipher.decrypt(enc[16:]))
+ 
+# # First let us encrypt secret message
+# encrypted = encrypt("This is a secret message", password)
+# print(encrypted)
+ 
+# # Let us decrypt using our original password
+# decrypted = decrypt(encrypted, password)
+# print(bytes.decode(decrypted))
 
 def initializeSensor():
     ## Tries to initialize the sensor
@@ -65,7 +95,6 @@ def markAttendance():
     f.convertImage(0x01)
     print("Input finger")
     scannedFinger = f.downloadCharacteristics(0x01)
-    characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
     print("SCANNED FINGER")
     print(scannedFinger)
     print("====================================================")
@@ -122,7 +151,8 @@ def enrollFingerprint():
     characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
     print(characteristics)
     #print('New template position #' + str(positionNumber)) 
-    payload = {'studentID':str(ID),'fingerprint':characteristics}
+    fingerprint = encrypt(characteristics,password)
+    payload = {'studentID':str(ID),'fingerprint':fingerprint}
     r = requests.post(url+'api/fingerprint',json = payload)
     r.raise_for_status()
     print(r.text)
