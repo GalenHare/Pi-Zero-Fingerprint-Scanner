@@ -8,7 +8,7 @@ from Crypto.Cipher import AES
 from Crypto import Random
 from pyfingerprint.pyfingerprint import PyFingerprint
 
-url = "http://192.168.0.9:5000/"
+url = "http://192.168.0.7:5000/"
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
 unpad = lambda s: s[:-ord(s[len(s) - 1:])]
@@ -55,7 +55,7 @@ def decrypt(enc, password):
     enc = base64.b64decode(enc)
     iv = enc[:16]
     cipher = AES.new(private_key, AES.MODE_CBC, iv)
-    return unpad(cipher.decrypt(enc[16:]))
+    return bytes.decode(unpad(cipher.decrypt(enc[16:])))
  
 # # First let us encrypt secret message
 # encrypted = encrypt("This is a secret message", password)
@@ -99,7 +99,7 @@ def markAttendance():
     print(scannedFinger)
     print("====================================================")
     for x in response:
-        temp = x["fingerprint"].split(", ")
+        temp = decrypt(x["fingerprint"].encode(),password).split(", ")
         temp[0] = temp[0].split("[")[1]
         temp[len(temp)-1] = temp[len(temp)-1].split("]")[0]
         results = list(map(int, temp))
@@ -148,10 +148,11 @@ def enrollFingerprint():
     f.createTemplate()
     ##Saves template at new position number
     #positionNumber = f.storeTemplate()
-    characteristics = str(f.downloadCharacteristics(0x01)).encode('utf-8')
+    characteristics = str(f.downloadCharacteristics(0x01))
     print(characteristics)
     #print('New template position #' + str(positionNumber)) 
     fingerprint = encrypt(characteristics,password)
+    print(fingerprint)
     payload = {'studentID':str(ID),'fingerprint':fingerprint}
     r = requests.post(url+'api/fingerprint',json = payload)
     r.raise_for_status()
@@ -166,6 +167,8 @@ def attendanceRequest(id):
     print(endMinute)
     if(timeParser('currentTimeMins')>int(endMinute) or timeParser('currentDay')!=int(endDay)):
         courseCode,endDay,startMinute,endMinute = requestCourse()
+    if(courseCode == -1):
+        return
     payload = {'studentID':id,"date":timeParser('JSFormat'),'courseCode':courseCode}
     print(payload)
     r = requests.post(url+'api/attendance',json = payload)
@@ -180,7 +183,11 @@ def requestCourse():
     response = r.json()
     print(response)
     #TODO: add contingency for nothing returned as well as for multiple
-    return response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
+    if(response == []):
+        print("No courses found for this time")
+        return -1,-1,-1,-1
+    else:
+        return response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
     
     
 
