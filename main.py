@@ -7,7 +7,9 @@ import hashlib
 from Crypto.Cipher import AES
 from Crypto import Random
 from pyfingerprint.pyfingerprint import PyFingerprint
+form lcd import lcd_driver
 
+display= lcddriver.lcd()
 url = "http://192.168.0.7:5000/"
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
