@@ -7,7 +7,7 @@ import hashlib
 from Crypto.Cipher import AES
 from Crypto import Random
 from pyfingerprint.pyfingerprint import PyFingerprint
-form lcd import lcd_driver
+from lcd import lcd_driver
 
 display= lcddriver.lcd()
 url = "http://192.168.0.7:5000/"
@@ -72,6 +72,7 @@ def initializeSensor():
     state = None
     while(state == None):
         try:
+            display.lcd_display_string("Welcome", 1)
             print("Initializing fingerprint sensor...")
             global f
             f = PyFingerprint('/dev/ttyAMA0', 57600, 0xFFFFFFFF, 0x00000000) 
