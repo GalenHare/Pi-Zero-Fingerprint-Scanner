@@ -7,10 +7,21 @@ import hashlib
 from Crypto.Cipher import AES
 from Crypto import Random
 from pyfingerprint.pyfingerprint import PyFingerprint
-from lcd import lcd_driver
+from lcd import lcddriver
+import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
+
+upButton = 36
+downButton = 38
+selectButton = 40
+
+GPIO.setwarnings(False) # Ignore warning for now
+GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
+GPIO.setup(upButton, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 10 to be an input pin and set 
+GPIO.setup(downButton, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 10 to be an input pin and set 
+GPIO.setup(selectButton, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 10 to be an input pin and set 
 
 display= lcddriver.lcd()
-url = "http://192.168.0.7:5000/"
+url = "http://192.168.0.11:5000/"
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
 unpad = lambda s: s[:-ord(s[len(s) - 1:])]
@@ -28,16 +39,35 @@ def main():
         ###try:
         print("Welcome to the the Registration Authentiction Unit")
         selection = None
-        while(selection != "1" and selection != "2"):
+        display.lcd_display_string("Please select an", 1)
+        display.lcd_display_string("option", 2)
+        time.sleep(3)
+        display.lcd_clear()
+        option = 0
+        while(selection != "j"):
+            display.lcd_display_string("1.Enroll", 1)
+            display.lcd_display_string("2.Mark", 2)
             print("Please select an option from below")
             print("\t1:Enroll a fingerprint\n\t2:Mark Attendance")
             ##TODO: Ensure admin user before enrolling a fingerprint
-            selection = input()
-            if(selection != "1" and selection != "2"):
+            selection = buttonInput()
+            if(selection == "w" or selection == "s"):
+                option+=1
+                display.lcd_clear()
+                if(option%2==0):
+                    display.lcd_display_string("1.Enroll", 1)
+                    display.lcd_display_string("2.Mark<<<<<", 2)
+                else:
+                    display.lcd_display_string("1.Enroll<<<<<", 1)
+                    display.lcd_display_string("2.Mark", 2)
+            elif(selection!="j"):
                 print("Invalid selection please try again")
-        if(selection == "1"):
+                display.lcd_clear()
+                display.lcd_display_string("Invalid Selction", 1)
+                time.sleep(2)
+        if(option %2 == 1):
             enrollFingerprint()
-        elif(selection == "2"):
+        elif(option %2 == 0):
             markAttendance()
 #except Exception as e:
  #           print('Operation failed!')
@@ -70,9 +100,16 @@ def decrypt(enc, password):
 def initializeSensor():
     ## Tries to initialize the sensor
     state = None
+    for x in range(2):
+        display.lcd_display_string(" Welcome to the ", 1)
+        display.lcd_display_string("     R.A.U.     ", 2)
+        time.sleep(2)
+        display.lcd_clear()
+        time.sleep(1)
+    display.lcd_clear()
     while(state == None):
         try:
-            display.lcd_display_string("Welcome", 1)
+            display.lcd_display_string("Initializing...", 1)
             print("Initializing fingerprint sensor...")
             global f
             f = PyFingerprint('/dev/ttyAMA0', 57600, 0xFFFFFFFF, 0x00000000) 
@@ -80,17 +117,32 @@ def initializeSensor():
                 raise ValueError('The given fingerprint sensor password is wrong!')
             print("Fingerprint sensor successfully initialized")
             state = 1
+            display.lcd_display_string("....Success!....", 1)
+            time.sleep(2)
+            display.lcd_clear()
         except Exception as e:
+            display.lcd_display_string("Failed retrying", 1)
+            time.sleep(3)
+            display.lcd_clear()
             print('The fingerprint sensor could not be initialized!')
             print('Exception message: ' + str(e))
 def markAttendance():
+    display.lcd_clear()
+    display.lcd_display_string("Scan Barcode...",1)
     ID = input("Please enter ID of student\n")
     temp = url +'api/fingerprint/id/' + str(ID)
     r = requests.get(temp)
     r.raise_for_status()
     response = r.json()
     #print(response)
+    if(response == []):
+        display.lcd_clear()
+        display.lcd_display_string("No student found!",1)
+        time.sleep(3)
+        return
     print('Waiting for finger...')  
+    display.lcd_clear()
+    display.lcd_display_string("Place Finger...",1)
     ## Wait that finger is read
     while ( f.readImage() == False ):
         pass
@@ -112,17 +164,29 @@ def markAttendance():
         if(score > 0):
             break 
     if (score != 0):
+        display.lcd_clear()
+        display.lcd_display_string("Fingerprint",1)
+        display.lcd_display_string("verified",2)
+        time.sleep(2)
         print(results)
         print("Finger found!")
         print("With an accuracy score: "+ str(score))
         attendanceRequest(ID)
     else:
+        display.lcd_clear()
+        display.lcd_display_string("Fingerprint",1)
+        display.lcd_display_string("not verified!",2)
+        time.sleep(2)
         print("Finger not found")
 
 def enrollFingerprint():
     ## Tries to enroll a new finger
+    display.lcd_clear()
+    display.lcd_display_string("Scan Barcode...",1)
     print('Please enter ID of student...')
     ID = input()
+    display.lcd_clear()
+    display.lcd_display_string("Place Finger...",1)
     print('Waiting for finger...')
     #Wait that finger is read
     while(f.readImage() == False):
@@ -137,15 +201,25 @@ def enrollFingerprint():
     #     print('Template already exists at postition #' + str(positionNumber))
     #     exit(0)
     print('Remove finger...')
+    display.lcd_clear()
+    display.lcd_display_string("Remove Finger...",1)
     time.sleep(2)
     print('Place same finger...')
+    display.lcd_clear()
+    display.lcd_display_string("Place same",1)
+    display.lcd_display_string("finger...",2)
     #Wait until that finger is read again
     while(f.readImage() == False):
         pass
     ##Converts read image to characterisitics and stored it in charbuffer 2            
     f.convertImage(0x02)
+    display.lcd_clear()
+    display.lcd_display_string("Enrolling....",1)
     ## Compares the charbuffers
     if( f.compareCharacteristics() == 0):
+        display.lcd_clear()
+        display.lcd_display_string("Fingers do not",1)
+        display.lcd_display_string("match!",2)
         raise Exception('Fingers do not match')
     ##Creates a template
     f.createTemplate()
@@ -161,6 +235,11 @@ def enrollFingerprint():
     r.raise_for_status()
     print(r.text)
     print("Success")
+    display.lcd_clear()
+    display.lcd_display_string("Enrollment",1)
+    display.lcd_display_string("Succesful!",2)
+    time.sleep(3)
+
 
 def attendanceRequest(id):
     global endMinute
@@ -202,5 +281,14 @@ def timeParser(option):
     elif(option == 'JSFormat'):
         return currentDateTime.strftime("%Y-%m-%dT%X")
         
+def buttonInput():
+    while True:
+        if(GPIO.input(upButton) == False):
+            return "w"
+        if(GPIO.input(downButton) == False):
+            return "s"
+        if(GPIO.input(selectButton) == False):
+            return "j"
+
 if __name__ == '__main__':
     main()
