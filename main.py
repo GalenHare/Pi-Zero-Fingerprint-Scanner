@@ -32,11 +32,13 @@ endHour = -1
 endMinute = -1
 courseCode = 0
 startMinute = -1
+currentDateTime = -1
 ## Main program
 def main():
     initializeSensor()
     while(True):
         ###try:
+        courseCode,endDay,startMinute,endMinute = updateCourse()
         print("Welcome to the the Registration Authentiction Unit")
         selection = None
         display.lcd_display_string("Please select an", 1)
@@ -242,34 +244,55 @@ def enrollFingerprint():
 
 
 def attendanceRequest(id):
-    global endMinute
-    #TODO: Add exception handling for this function only
-    global currentDateTime
-    currentDateTime = datetime.datetime.now()
-    print(endMinute)
-    if(timeParser('currentTimeMins')>int(endMinute) or timeParser('currentDay')!=int(endDay)):
-        courseCode,endDay,startMinute,endMinute = requestCourse()
-    if(courseCode == -1):
-        return
+    # global endMinute
+    # #TODO: Add exception handling for this function only
+    # global currentDateTime
+    # currentDateTime = datetime.datetime.now()
+    # print(endMinute)
+    # if(timeParser('currentTimeMins')>int(endMinute) or timeParser('currentDay')!=int(endDay)):
+    #     courseCode,endDay,startMinute,endMinute = requestCourse()
+    # if(courseCode == -1):
+    #     return
     payload = {'studentID':id,"date":timeParser('JSFormat'),'courseCode':courseCode}
     print(payload)
     r = requests.post(url+'api/attendance',json = payload)
     r.raise_for_status()
     print(r.text)
 
-def requestCourse():
-    payload = {"_id":scannerID,"currentDate":"2020-03-25T14:00:00"}
-    """timeParser("JSFormat")"""
-    r = requests.get(url+'api/scanner/course',params = payload)
-    r.raise_for_status()
-    response = r.json()
-    print(response)
-    #TODO: add contingency for nothing returned as well as for multiple
-    if(response == []):
-        print("No courses found for this time")
-        return -1,-1,-1,-1
-    else:
-        return response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
+# def requestCourse():
+#     payload = {"_id":scannerID,"currentDate":"2020-03-25T14:00:00"}
+#     """timeParser("JSFormat")"""
+#     r = requests.get(url+'api/scanner/course',params = payload)
+#     r.raise_for_status()
+#     response = r.json()
+#     print(response)
+#     #TODO: add contingency for nothing returned as well as for multiple
+#     if(response == []):
+#         print("No courses found for this time")
+#         return -1,-1,-1,-1
+#     else:
+#         return response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
+
+def updateCourse():
+    currentDateTime = datetime.datetime.now()
+    currentMinute = timeParser("currentTimeMins")
+    if(currentMinute >= endMinute):
+        payload = {"_id":scannerID,"currentDate":timeParser("JSFormat")}
+        r = requests.get(url+'api/scanner/course',params = payload)
+        r.raise_for_status()
+        response = r.json
+        if(response == []):
+            display.lcd_display_string("No Course found",1)
+            display.lcd_display_string("for this time",2)
+            time.sleep(7)
+            return -1,-1,-1,-1
+        else:
+            display.lcd_display_string("Current Course",1)
+            tempString = str(response[0]['courseCode'])
+            display.lcd_display_string(tempString,2)
+            time.sleep(3)
+            return response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
+
     
     
 
