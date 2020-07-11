@@ -45,41 +45,41 @@ def main():
         if status == 0:
         	courseCode,endDay,startMinute,endMinute = updateCourse()
         else:
-        print("Welcome to the the Registration Authentiction Unit")
-        selection = None
-        display.lcd_display_string("Please select an", 1)
-        display.lcd_display_string("option", 2)
-        time.sleep(3)
-        display.lcd_clear()
-        option = 0
-        while(selection != "j"):
-            display.lcd_display_string("1.Enroll", 1)
-            display.lcd_display_string("2.Mark", 2)
-            print("Please select an option from below")
-            print("\t1:Enroll a fingerprint\n\t2:Mark Attendance")
-            ##TODO: Ensure admin user before enrolling a fingerprint
-            selection = buttonInput()
-            if(selection == "w" or selection == "s"):
-                option+=1
-                display.lcd_clear()
-                if(option%2==0):
-                    display.lcd_display_string("1.Enroll", 1)
-                    display.lcd_display_string("2.Mark<<<<<", 2)
-                else:
-                    display.lcd_display_string("1.Enroll<<<<<", 1)
-                    display.lcd_display_string("2.Mark", 2)
-            elif(selection!="j"):
-                print("Invalid selection please try again")
-                display.lcd_clear()
-                display.lcd_display_string("Invalid Selction", 1)
-                time.sleep(2)
-        if(option %2 == 1):
-            enrollFingerprint()
-        elif(option %2 == 0):
-            markAttendance()
+            print("Welcome to the the Registration Authentiction Unit")
+            selection = None
+            display.lcd_display_string("Please select an", 1)
+            display.lcd_display_string("option", 2)
+            time.sleep(3)
+            display.lcd_clear()
+            option = 0
+            while(selection != "j"):
+                display.lcd_display_string("1.Enroll", 1)
+                display.lcd_display_string("2.Mark", 2)
+                print("Please select an option from below")
+                print("\t1:Enroll a fingerprint\n\t2:Mark Attendance")
+                ##TODO: Ensure admin user before enrolling a fingerprint
+                selection = buttonInput()
+                if(selection == "w" or selection == "s"):
+                    option+=1
+                    display.lcd_clear()
+                    if(option%2==0):
+                        display.lcd_display_string("1.Enroll", 1)
+                        display.lcd_display_string("2.Mark<<<<<", 2)
+                    else:
+                        display.lcd_display_string("1.Enroll<<<<<", 1)
+                        display.lcd_display_string("2.Mark", 2)
+                elif(selection!="j"):
+                    print("Invalid selection please try again")
+                    display.lcd_clear()
+                    display.lcd_display_string("Invalid Selction", 1)
+                    time.sleep(2)
+            if(option %2 == 1):
+                enrollFingerprint()
+            elif(option %2 == 0):
+                markAttendance()
 #except Exception as e:
- #           print('Operation failed!')
-  #          print('Exception message: ' + str(e))
+ #       print('Operation failed!')
+  #    print('Exception message: ' + str(e))
            # exit(1)
 # AES 256 encryption/decryption using pycrypto library 
 def encrypt(raw, password):
@@ -110,7 +110,7 @@ def initializeSensor():
     state = None
     for x in range(2):
         display.lcd_display_string(" Welcome to the ", 1)
-        display.lcd_display_string("     R.A.U.     ", 2)
+        display.lcd_display_string("     R.A.U.  ", 2)
         time.sleep(2)
         display.lcd_clear()
         time.sleep(1)
@@ -139,16 +139,16 @@ def markAttendance():
     display.lcd_display_string("Scan Barcode...",1)
     ID = input("Please enter ID of student\n")
     if status == 0:
-	    temp = url +'api/fingerprint/id/' + str(ID)
-	    r = requests.get(temp)
-	    r.raise_for_status()
-	    response = r.json()
-	    #print(response)
-	    if(response == []):
-	        display.lcd_clear()
-	        display.lcd_display_string("No student found!",1)
-	        time.sleep(3)
-	        return
+        temp = url +'api/fingerprint/id/' + str(ID)
+        r = requests.get(temp)
+        r.raise_for_status()
+        response = r.json()
+	   #print(response)
+        if(response == []):
+            display.lcd_clear()
+            display.lcd_display_string("No student found!",1)
+            time.sleep(3)
+            return
     print('Waiting for finger...')  
     display.lcd_clear()
     display.lcd_display_string("Place Finger...",1)
@@ -163,34 +163,34 @@ def markAttendance():
     print(scannedFinger)
     print("====================================================")
     if status == 0:
-	    for x in response:
-	        temp = decrypt(x["fingerprint"].encode(),password).split(", ")
-	        temp[0] = temp[0].split("[")[1]
-	        temp[len(temp)-1] = temp[len(temp)-1].split("]")[0]
-	        results = list(map(int, temp))
-	        print (results) 
-	        f.uploadCharacteristics(0x02,results)
-	        score = f.compareCharacteristics()
-	        if(score > 0):
-	            break 
-	    if (score != 0):
-	        display.lcd_clear()
-	        display.lcd_display_string("Fingerprint",1)
-	        display.lcd_display_string("verified",2)
-	        time.sleep(2)
-	        print(results)
-	        print("Finger found!")
-	        print("With an accuracy score: "+ str(score))
-	        attendanceRequest(ID)
-	    else:
-	        display.lcd_clear()
-	        display.lcd_display_string("Fingerprint",1)
-	        display.lcd_display_string("not verified!",2)
-	        time.sleep(2)
-	        print("Finger not found")
-	else:
-		tempString = '{"option":"2","ID":"'+str(ID)+'","fingerprint":"'+str(scannedFinger)+'","current":"'+timeParser(JSFormat)+'"}\n'
-		offlineFile.write(tempString)
+        for x in response:
+            temp = decrypt(x["fingerprint"].encode(),password).split(", ")
+            temp[0] = temp[0].split("[")[1]
+            temp[len(temp)-1] = temp[len(temp)-1].split("]")[0]
+            results = list(map(int, temp))
+            print (results) 
+            f.uploadCharacteristics(0x02,results)
+            score = f.compareCharacteristics()
+            if(score > 0):
+                break 
+            if (score != 0):
+                display.lcd_clear()
+                display.lcd_display_string("Fingerprint",1)
+                display.lcd_display_string("verified",2)
+                time.sleep(2)
+                print(results)
+                print("Finger found!")
+                print("With an accuracy score: "+ str(score))
+                attendanceRequest(ID)
+            else:
+                display.lcd_clear()
+                display.lcd_display_string("Fingerprint",1)
+                display.lcd_display_string("not verified!",2)
+                time.sleep(2)
+                print("Finger not found")
+    else:
+        tempString = '{"option":"2","ID":"'+str(ID)+'","fingerprint":"'+str(scannedFinger)+'","current":"'+timeParser(JSFormat)+'"}\n'
+        offlineFile.write(tempString)
 
 
 def enrollFingerprint():
@@ -212,8 +212,8 @@ def enrollFingerprint():
     # result = f.searchTemplate()
     # positionNumber = result[0]
     # if (positionNumber >= 0):
-    #     print('Template already exists at postition #' + str(positionNumber))
-    #     exit(0)
+    #    print('Template already exists at postition #' + str(positionNumber))
+    #    exit(0)
     print('Remove finger...')
     display.lcd_clear()
     display.lcd_display_string("Remove Finger...",1)
@@ -225,7 +225,7 @@ def enrollFingerprint():
     #Wait until that finger is read again
     while(f.readImage() == False):
         pass
-    ##Converts read image to characterisitics and stored it in charbuffer 2            
+    ##Converts read image to characterisitics and stored it in charbuffer 2   
     f.convertImage(0x02)
     display.lcd_clear()
     display.lcd_display_string("Enrolling....",1)
@@ -246,17 +246,17 @@ def enrollFingerprint():
     print(fingerprint)
     payload = {'studentID':str(ID),'fingerprint':fingerprint}
     if status == 0:
-	    r = requests.post(url+'api/fingerprint',json = payload)
-	    r.raise_for_status()
-	    print(r.text)
-	    print("Success")
-	    display.lcd_clear()
-	    display.lcd_display_string("Enrollment",1)
-	    display.lcd_display_string("Succesful!",2)
-	    time.sleep(3)
-	else:
-		tempString = '{"option":"1","ID":"'+str(ID)+'","fingerprint":"'+str(fingerprint)+'"}\n'
-		offlineFile.write(tempString)
+        r = requests.post(url+'api/fingerprint',json = payload)
+        r.raise_for_status()
+        print(r.text)
+        print("Success")
+        display.lcd_clear()
+        display.lcd_display_string("Enrollment",1)
+        display.lcd_display_string("Succesful!",2)
+        time.sleep(3)
+    else:
+        tempString = '{"option":"1","ID":"'+str(ID)+'","fingerprint":"'+str(fingerprint)+'"}\n'
+        offlineFile.write(tempString)
 
 
 
@@ -267,9 +267,9 @@ def attendanceRequest(id):
     # currentDateTime = datetime.datetime.now()
     # print(endMinute)
     # if(timeParser('currentTimeMins')>int(endMinute) or timeParser('currentDay')!=int(endDay)):
-    #     courseCode,endDay,startMinute,endMinute = requestCourse()
+    #    courseCode,endDay,startMinute,endMinute = requestCourse()
     # if(courseCode == -1):
-    #     return
+    #    return
     payload = {'studentID':id,"date":timeParser('JSFormat'),'courseCode':courseCode}
     print(payload)
     r = requests.post(url+'api/attendance',json = payload)
@@ -277,18 +277,18 @@ def attendanceRequest(id):
     print(r.text)
 
 # def requestCourse():
-#     payload = {"_id":scannerID,"currentDate":"2020-03-25T14:00:00"}
-#     """timeParser("JSFormat")"""
-#     r = requests.get(url+'api/scanner/course',params = payload)
-#     r.raise_for_status()
-#     response = r.json()
-#     print(response)
-#     #TODO: add contingency for nothing returned as well as for multiple
-#     if(response == []):
-#         print("No courses found for this time")
-#         return -1,-1,-1,-1
-#     else:
-#         return response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
+#    payload = {"_id":scannerID,"currentDate":"2020-03-25T14:00:00"}
+#    """timeParser("JSFormat")"""
+#    r = requests.get(url+'api/scanner/course',params = payload)
+#    r.raise_for_status()
+#    response = r.json()
+#    print(response)
+#    #TODO: add contingency for nothing returned as well as for multiple
+#    if(response == []):
+#       print("No courses found for this time")
+#       return -1,-1,-1,-1
+#    else:
+#       return response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
 
 def updateCourse():
     currentDateTime = datetime.datetime.now()
@@ -330,11 +330,12 @@ def buttonInput():
         if(GPIO.input(selectButton) == False):
             return "j"
 def checkConnection():
-	try:
+    try:
         r = requests.get(url)
         r.raise_for_status()
-     except Exception as e:
-        display.lcd_display_string("Connection", 1)
+    except Exception as e:
+        print("Connection server failed!")
+        display.lcd_displai_string("Connection", 1)
         display.lcd_display_string("failed", 2)
         time.sleep(1)
         display.lcd_clear()
@@ -347,58 +348,57 @@ def checkConnection():
         print('Exception message: ' + str(e))
 
 def checkConnection2():
-	try:
+    try:
         r = requests.get(url)
         r.raise_for_status()
-       	status = 0
-       	flushFile()
-     except Exception as e:
+        status = 0
+        flushFile()
+    except Exception as e:
         status = 1
         print('The fingerprint sensor could not be initialized!')
         print('Exception message: ' + str(e))
 
 def flushFile():
-	offlineFile.seek(0)
-	lines = offlineFile.readlines()
-	for i in range(lines):
-		lines[i]=lines[i].rstrip("\n")
-		lines[i] = json.loads(lines[i])
-		if(lines[i]['option']=="1"):
-			payload = {'studentID':str(lines[i]['ID']),'fingerprint':str(lines[i]['fingerprint'])}
-			r = requests.post(url+'api/fingerprint',json = payload)
-	    	r.raise_for_status()
-	    	print(r.text)
-	    	print("Success")
-	    else:
-	    	f.uploadCharacteristics(0x01,list(map(int,lines[i]['fingerprint'])))
-	    	temp = url +'api/fingerprint/id/' + str(lines[i]['ID'])
-	   		r = requests.get(temp)
-	    	r.raise_for_status()
-	    	response = r.json()
-	    	#print(response)
-	    	if(response != []):
-			    for x in response:
-			        temp = decrypt(x["fingerprint"].encode(),password).split(", ")
-			        temp[0] = temp[0].split("[")[1]
-			        temp[len(temp)-1] = temp[len(temp)-1].split("]")[0]
-			        results = list(map(int, temp))
-			        print (results) 
-			        f.uploadCharacteristics(0x02,results)
-			        score = f.compareCharacteristics()
-			        if(score > 0):
-			            break 
-			    if (score != 0):
-			        attendanceRequest(ID)   
-	    			payload = {"_id":scannerID,"currentDate":str(lines[i]['current'])}
-        			r = requests.get(url+'api/scanner/course',params = payload)
-        			r.raise_for_status()
-        			response = r.json
-        			if(response != []):
-	    				payload = {'studentID':id,"date":str(lines[i]['current']),'courseCode':response[0]['courseCode']}
-    					print(payload)
-    					r = requests.post(url+'api/attendance',json = payload)
-    					r.raise_for_status()
-    					print(r.text)
+    offlineFile.seek(0)
+    lines = offlineFile.readlines()
+    for i in range(lines):
+        lines[i]=lines[i].rstrip("\n")
+        lines[i] = json.loads(lines[i])
+        if(lines[i]['option']=="1"):
+            payload = {'studentID':str(lines[i]['ID']),'fingerprint':str(lines[i]['fingerprint'])}
+            r = requests.post(url+'api/fingerprint',json = payload)
+            r.raise_for_status()
+            print(r.text)
+            print("Success")
+        else:
+            f.uploadCharacteristics(0x01,list(map(int,lines[i]['fingerprint'])))
+            temp = url +'api/fingerprint/id/' + str(lines[i]['ID'])
+            r = requests.get(temp)
+            r.raise_for_status()
+            response = r.json()
+            #print(response)
+            if(response != []):
+                for x in response:
+                    temp = decrypt(x["fingerprint"].encode(),password).split(", ")
+                    temp[0] = temp[0].split("[")[1]
+                    temp[len(temp)-1] = temp[len(temp)-1].split("]")[0]
+                    results = list(map(int, temp))
+                    print (results) 
+                    f.uploadCharacteristics(0x02,results)
+                    score = f.compareCharacteristics()
+                    if(score > 0):
+                        break 
+                        if (score != 0):
+                            payload = {"_id":scannerID,"currentDate":str(lines[i]['current'])}
+                            r = requests.get(url+'api/scanner/course',params = payload)
+                            r.raise_for_status()
+                            response = r.json
+                            if(response != []):
+                                payload = {'studentID':id,"date":str(lines[i]['current']),'courseCode':response[0]['courseCode']}
+                                print(payload)
+                                r = requests.post(url+'api/attendance',json = payload)
+                                r.raise_for_status()
+                                print(r.text)
 
 		
 
