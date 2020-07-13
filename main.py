@@ -285,7 +285,7 @@ def attendanceRequest(id):
     #   courseCode,endDay,startMinute,endMinute = requestCourse()
     # if(courseCode == -1):
     #   return
-    payload = {'studentID':id,"date":timeParser('JSFormat'),'courseCode':courseCode}
+    payload = {'studentID':id,"date":timeParser('JSFormat'),'courseCode':courseCode,"scannerID":str(scannerID)}
     print(payload)
     r = requests.post(url+'api/attendance',json = payload)
     r.raise_for_status()
@@ -431,7 +431,7 @@ def flushFile():
                     response = r.json()
                     print("Matched a finger")
                     if(response != []):
-                        payload = {'studentID':id,"date":str(lines[i]['current']),'courseCode':response[0]['courseCode']}
+                        payload = {'studentID':id,"date":str(lines[i]['current']),'courseCode':response[0]['courseCode'],"scannerID":str(scannerID)}
                         print(payload)
                         r = requests.post(url+'api/attendance',json = payload)
                         r.raise_for_status()
