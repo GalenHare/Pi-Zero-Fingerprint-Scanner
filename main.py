@@ -10,7 +10,8 @@ from Crypto import Random
 from pyfingerprint.pyfingerprint import PyFingerprint
 from lcd import lcddriver
 import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
-from pynput import keyboard
+import keyboard
+
 
 upButton = 36
 downButton = 38
@@ -23,7 +24,7 @@ GPIO.setup(downButton, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 10 to be an 
 GPIO.setup(selectButton, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 10 to be an input pin and set 
 
 display= lcddriver.lcd()
-url = "http://192.168.0.10:5000/"
+url = "http://192.168.0.20:5000/"
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
 unpad = lambda s: s[:-ord(s[len(s) - 1:])]
@@ -36,6 +37,7 @@ courseCode = 0
 startMinute = -1
 status = 0
 ID = ""
+entered = 0
 
 ## Main program
 def main():
@@ -110,27 +112,16 @@ def decrypt(enc, password):
 # # Let us decrypt using our original password
 # decrypted = decrypt(encrypted, password)
 # print(bytes.decode(decrypted))
-def on_press(key):
-    try:
-        print('alphanumeric key {0} pressed'.format(
-            key.char))
-    except AttributeError:
-        print('special key {0} pressed'.format(
-            key))
+def key_press(key):
+    global ID,entered
+    print(key.name)
+    if(key.name!="enter"):
+        ID = ID + key.name
+        print(ID)
+    else:    
+        entered=1
 
-def on_release(key):
-    global ID
-    print('{0} released'.format(
-        key))        
-    try:
-        ID = ID + key.char
-    except AttributeError:
-        if(key==keyboard.Key.enter):
-            print(ID)
-            return False
-        if key == keyboard.Key.esc:
-            # Stop listener
-            return False
+keyboard.on_press(key_press)
 
 def initializeSensor():
     ## Tries to initialize the sensor
@@ -162,9 +153,15 @@ def initializeSensor():
             print('The fingerprint sensor could not be initialized!')
             print('Exception message: ' + str(e))
 def markAttendance():
+    global ID,entered
     display.lcd_clear()
     display.lcd_display_string("Scan Barcode...",1)
-    ID = input("Please enter ID of student\n")
+    while(entered == 0):
+        time.sleep(1)
+    entered = 0
+    display.lcd_clear()
+    display.lcd_display_string("ID: "+ID,1)
+    time.sleep(2)
     if status == 0:
         temp = url +'api/fingerprint/id/' + str(ID)
         r = requests.get(temp)
@@ -224,17 +221,18 @@ def markAttendance():
         offlineFile = open("offlineFile.txt","a+")
         offlineFile.write(tempString)
         offlineFile.close()
+    ID = ""
 
 
 def enrollFingerprint():
+    global ID,entered
     ## Tries to enroll a new finger
     display.lcd_clear()
     display.lcd_display_string("Scan Barcode...",1)
     print('Please enter ID of student...')
-    with keyboard.Listener(
-            on_press=on_press,
-            on_release=on_release) as listener:
-        listener.join()
+    while(entered == 0):
+        time.sleep(1)
+    entered = 0
     display.lcd_clear()
     display.lcd_display_string("ID: "+ID,1)
     time.sleep(2)
@@ -301,7 +299,6 @@ def enrollFingerprint():
         offlineFile = open("offlineFile.txt","a+")
         offlineFile.write(tempString)
         offlineFile.close()
-    global ID
     ID = ""
 
 
