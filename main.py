@@ -173,6 +173,7 @@ def markAttendance():
             display.lcd_clear()
             display.lcd_display_string("No student found!",1)
             time.sleep(3)
+            ID = ""
             return
     print('Waiting for finger...')  
     display.lcd_clear()
@@ -272,6 +273,7 @@ def enrollFingerprint():
         display.lcd_display_string("Fingers do not",1)
         display.lcd_display_string("match!",2)
         time.sleep(3)
+        ID = ""
         return
     ##Creates a template
     f.createTemplate()
