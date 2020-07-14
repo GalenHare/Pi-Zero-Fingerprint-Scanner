@@ -10,6 +10,7 @@ from Crypto import Random
 from pyfingerprint.pyfingerprint import PyFingerprint
 from lcd import lcddriver
 import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
+from pynput import keyboard
 
 upButton = 36
 downButton = 38
@@ -34,6 +35,7 @@ endMinute = -1
 courseCode = 0
 startMinute = -1
 status = 0
+ID = ""
 
 ## Main program
 def main():
@@ -108,6 +110,27 @@ def decrypt(enc, password):
 # # Let us decrypt using our original password
 # decrypted = decrypt(encrypted, password)
 # print(bytes.decode(decrypted))
+def on_press(key):
+    try:
+        print('alphanumeric key {0} pressed'.format(
+            key.char))
+    except AttributeError:
+        print('special key {0} pressed'.format(
+            key))
+
+def on_release(key):
+    global ID
+    print('{0} released'.format(
+        key))        
+    try:
+        ID = ID + key.char
+    except AttributeError:
+        if(key==keyboard.Key.enter):
+            print(ID)
+            return False
+        if key == keyboard.Key.esc:
+            # Stop listener
+            return False
 
 def initializeSensor():
     ## Tries to initialize the sensor
@@ -208,7 +231,13 @@ def enrollFingerprint():
     display.lcd_clear()
     display.lcd_display_string("Scan Barcode...",1)
     print('Please enter ID of student...')
-    ID = input()
+    with keyboard.Listener(
+            on_press=on_press,
+            on_release=on_release) as listener:
+        listener.join()
+    display.lcd_clear()
+    display.lcd_display_string("ID: "+ID,1)
+    time.sleep(2)
     display.lcd_clear()
     display.lcd_display_string("Place Finger...",1)
     print('Waiting for finger...')
@@ -272,6 +301,8 @@ def enrollFingerprint():
         offlineFile = open("offlineFile.txt","a+")
         offlineFile.write(tempString)
         offlineFile.close()
+    global ID
+    ID = ""
 
 
 
