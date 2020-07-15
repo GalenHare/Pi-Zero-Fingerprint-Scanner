@@ -378,7 +378,7 @@ def checkConnection():
 def checkConnection2():
     global status
     try:
-        r = requests.get(url)
+        r = requests.get(url,timeout=2)
         r.raise_for_status()
         status = 0
     except Exception as e:
