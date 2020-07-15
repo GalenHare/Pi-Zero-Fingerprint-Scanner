@@ -47,11 +47,10 @@ def main():
         ###try:
         checkConnection2()
         print(status)
-        if status == 0:
-            global courseCode,endDay,startMinute,endMinute 
-            courseCode,endDay,startMinute,endMinute = updateCourse()
-        print("Welcome to the the Registration Authentiction Unit")
+        updateCourse()
+        print("Welcome to the the Registration Authentication Unit")
         selection = None
+        display.lcd_clear()
         display.lcd_display_string("Please select an", 1)
         display.lcd_display_string("option", 2)
         time.sleep(3)
@@ -85,10 +84,7 @@ def main():
             enrollFingerprint()
         elif(option %2 == 0):
             markAttendance()
-#except Exception as e:
- #     print('Operation failed!')
-  # print('Exception message: ' + str(e))
-           # exit(1)
+
 # AES 256 encryption/decryption using pycrypto library 
 def encrypt(raw, password):
     private_key = hashlib.sha256(password.encode("utf-8")).digest()
@@ -105,13 +101,6 @@ def decrypt(enc, password):
     cipher = AES.new(private_key, AES.MODE_CBC, iv)
     return bytes.decode(unpad(cipher.decrypt(enc[16:])))
  
-# # First let us encrypt secret message
-# encrypted = encrypt("This is a secret message", password)
-# print(encrypted)
- 
-# # Let us decrypt using our original password
-# decrypted = decrypt(encrypted, password)
-# print(bytes.decode(decrypted))
 def key_press(key):
     global ID,entered
     print(key.name)
@@ -178,15 +167,23 @@ def markAttendance():
     print('Waiting for finger...')  
     display.lcd_clear()
     display.lcd_display_string("Place Finger...",1)
-    ## Wait that finger is read
-    while ( f.readImage() == False ):
+    print('Waiting for finger...')
+    while(f.readImage() == False):
         pass
+    f.convertImage(0x01)
+    print('Remove finger...')
     display.lcd_clear()
     display.lcd_display_string("Remove Finger...",1)
     time.sleep(2)
-    ## Converts read image to characteristics and stores it in charbuffer 1
-    f.convertImage(0x01)
-    print("Input finger")
+    print('Place same finger...')
+    display.lcd_clear()
+    display.lcd_display_string("Place same",1)
+    display.lcd_display_string("finger...",2)
+    while(f.readImage() == False):
+        pass
+    f.convertImage(0x02)
+    ##Creates a template
+    f.createTemplate()
     scannedFinger = f.downloadCharacteristics(0x01)
     print("SCANNED FINGER")
     print(scannedFinger)
@@ -245,13 +242,6 @@ def enrollFingerprint():
         pass
     ## Converts read image to characteristics and stored it in charbuffer 1
     f.convertImage(0x01)
-    #TODO: Check if fingerprint is already enrolled
-    #Checks if finger is already enrolled
-    # result = f.searchTemplate()
-    # positionNumber = result[0]
-    # if (positionNumber >= 0):
-    #   print('Template already exists at postition #' + str(positionNumber))
-    #   exit(0)
     print('Remove finger...')
     display.lcd_clear()
     display.lcd_display_string("Remove Finger...",1)
@@ -278,10 +268,8 @@ def enrollFingerprint():
     ##Creates a template
     f.createTemplate()
     ##Saves template at new position number
-    #positionNumber = f.storeTemplate()
     characteristics = str(f.downloadCharacteristics(0x01))
     print(characteristics)
-    #print('New template position #' + str(positionNumber)) 
     fingerprint = encrypt(characteristics,password)
     print(fingerprint)
     payload = {'studentID':str(ID),'fingerprint':fingerprint}
@@ -306,58 +294,41 @@ def enrollFingerprint():
 
 
 def attendanceRequest(id):
-    # global endMinute
-    # #TODO: Add exception handling for this function only
-    # global currentDateTime
-    # currentDateTime = datetime.datetime.now()
-    # print(endMinute)
-    # if(timeParser('currentTimeMins')>int(endMinute) or timeParser('currentDay')!=int(endDay)):
-    #   courseCode,endDay,startMinute,endMinute = requestCourse()
-    # if(courseCode == -1):
-    #   return
     payload = {'studentID':id,"date":timeParser('JSFormat'),'courseCode':courseCode,"scannerID":str(scannerID)}
     print(payload)
     r = requests.post(url+'api/attendance',json = payload)
     r.raise_for_status()
     print(r.text)
 
-# def requestCourse():
-#   payload = {"_id":scannerID,"currentDate":"2020-03-25T14:00:00"}
-#   """timeParser("JSFormat")"""
-#   r = requests.get(url+'api/scanner/course',params = payload)
-#   r.raise_for_status()
-#   response = r.json()
-#   print(response)
-#   #TODO: add contingency for nothing returned as well as for multiple
-#   if(response == []):
-#      print("No courses found for this time")
-#      return -1,-1,-1,-1
-#   else:
-#      return response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
+
 
 def updateCourse():
-    currentDateTime = datetime.datetime.now()
-    currentMinute = timeParser("currentTimeMins")
-    if(currentMinute >= endMinute or endDay != int(currentDateTime.strftime("%w"))):
-        payload = {"_id":scannerID,"currentDate":timeParser("JSFormat")}
-        print(payload)
-        r = requests.get(url+'api/scanner/course',params = payload)
-        r.raise_for_status()
-        response = r.json()
-        print(response)
-        if(response == []):
-            display.lcd_display_string("No Course found",1)
-            display.lcd_display_string("for this time",2)
-            time.sleep(3)
-            display.lcd_clear()
-            return -1,-1,-1,-1
-        else:
-            display.lcd_display_string("Current Course",1)
-            tempString = str(response[0]['courseCode'])
-            display.lcd_display_string(tempString,2)
-            time.sleep(3)
-            display.lcd_clear()
-            return response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
+    global courseCode,endDay,startMinute,endMinute 
+    if status == 0:
+        currentDateTime = datetime.datetime.now()
+        currentMinute = timeParser("currentTimeMins")
+        if(currentMinute >= endMinute or endDay != int(currentDateTime.strftime("%w"))):
+            payload = {"_id":scannerID,"currentDate":timeParser("JSFormat")}
+            print(payload)
+            r = requests.get(url+'api/scanner/course',params = payload)
+            r.raise_for_status()
+            response = r.json()
+            print(response)
+            if(response == []):
+                display.lcd_clear()
+                display.lcd_display_string("No Course found",1)
+                display.lcd_display_string("for this time",2)
+                time.sleep(3)
+                display.lcd_clear()
+                courseCode,endDay,startMinute,endMinute = -1,-1,-1,-1
+            else:
+                display.lcd_clear()
+                display.lcd_display_string("Current Course",1)
+                tempString = str(response[0]['courseCode'])
+                display.lcd_display_string(tempString,2)
+                time.sleep(3)
+                display.lcd_clear()
+                courseCode,endDay,startMinute,endMinute = response[0]['courseCode'],response[0]['day'],response[0]['startMinute'],response[0]['endMinute']
 
     
     
