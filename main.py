@@ -24,12 +24,21 @@ offlineRecords = db["offlineRecords"]
 upButton = 36
 downButton = 38
 selectButton = 40
+red = 31
+green = 33
+blue = 35
 
 GPIO.setwarnings(False) # Ignore warning for now
 GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
 GPIO.setup(upButton, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 10 to be an input pin and set 
 GPIO.setup(downButton, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 10 to be an input pin and set 
 GPIO.setup(selectButton, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 10 to be an input pin and set 
+
+GPIO.setwarnings(False) # Ignore warning for now
+GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
+GPIO.setup(red, GPIO.OUT) # Set pin 10 to be an input pin and set 
+GPIO.setup(green, GPIO.OUT) # Set pin 10 to be an input pin and set 
+GPIO.setup(blue, GPIO.OUT) # Set pin 10 to be an input pin and set 
 
 display= lcddriver.lcd()
 url = "http://192.168.1.140:5000/"
@@ -124,27 +133,34 @@ def initializeSensor():
     ## Tries to initialize the sensor
     state = None
     for x in range(2):
+        ledControl("green")
         display.lcd_display_string(" Welcome to the ", 1)
         display.lcd_display_string("     R.A.U.  ", 2)
         time.sleep(2)
+        ledControl("off")
         display.lcd_clear() 
         time.sleep(1)
     display.lcd_clear()
     while(state == None):
         try:
             display.lcd_display_string("Initializing...", 1)
+            time.sleep(1)
             print("Initializing fingerprint sensor...")
             global f
             f = PyFingerprint('/dev/ttyAMA0', 57600, 0xFFFFFFFF, 0x00000000) 
             if ( f.verifyPassword() == False ):
+                ledControl("red")
                 raise ValueError('The given fingerprint sensor password is wrong!')
             print("Fingerprint sensor successfully initialized")
             state = 1
             display.lcd_display_string("....Success!....", 1)
+            ledControl("green")
             time.sleep(2)
+            ledControl("off")
             display.lcd_clear()
         except Exception as e:
             display.lcd_display_string("Failed retrying", 1)
+            ledControl("red")
             time.sleep(3)
             display.lcd_clear()
             print('The fingerprint sensor could not be initialized!')
@@ -158,7 +174,9 @@ def markAttendance():
     entered = 0
     display.lcd_clear()
     display.lcd_display_string("ID: "+ID,1)
+    ledControl("green")
     time.sleep(2)
+    ledControl("off")
     if status == 0:
         temp = url +'api/fingerprint/id/' + str(ID)
         r = requests.get(temp)
@@ -169,20 +187,25 @@ def markAttendance():
             print("Empty JSON response")
             display.lcd_clear()
             display.lcd_display_string("No student found!",1)
+            ledControl("red")
             time.sleep(3)
+            ledControl("off")
             ID = ""
             return
     print('Waiting for finger...')  
     display.lcd_clear()
     display.lcd_display_string("Place Finger...",1)
     print('Waiting for finger...')
+    ledControl("blue")
     while(f.readImage() == False):
         pass
     f.convertImage(0x01)
+    ledControl("green")
     print('Remove finger...')
     display.lcd_clear()
     display.lcd_display_string("Remove Finger...",1)
     time.sleep(2)
+    ledControl("blue")
     print('Place same finger...')
     display.lcd_clear()
     display.lcd_display_string("Place same",1)
@@ -190,12 +213,14 @@ def markAttendance():
     while(f.readImage() == False):
         pass
     f.convertImage(0x02)
+    ledControl("green")
     ##Creates a template
     f.createTemplate()
     scannedFinger = f.downloadCharacteristics(0x01)
     print("SCANNED FINGER")
     print(scannedFinger)
     print("====================================================")
+    ledControl("off")
     if status == 0:
         for x in response:
             temp = decrypt(x["fingerprint"].encode(),password).split(", ")
@@ -211,7 +236,9 @@ def markAttendance():
             display.lcd_clear()
             display.lcd_display_string("Fingerprint",1)
             display.lcd_display_string("verified",2)
+            ledControl("green")
             time.sleep(3)
+            ledControl("off")
             print(results)
             print("Finger found!")
             print("With an accuracy score: "+ str(score))
@@ -220,7 +247,9 @@ def markAttendance():
             display.lcd_clear()
             display.lcd_display_string("Fingerprint",1)
             display.lcd_display_string("not verified!",2)
+            ledControl("red")
             time.sleep(2)
+            ledControl("off")
             print("Finger not found")
     else:
         tempRecord = {"option":"2","ID":str(ID),"fingerprint":str(scannedFinger),"current":timeParser('JSFormat'),"checked":0}
@@ -234,24 +263,30 @@ def enrollFingerprint():
     display.lcd_clear()
     display.lcd_display_string("Scan Barcode...",1)
     print('Please enter ID of student...')
+    ledControl("blue")
     while(entered == 0):
         time.sleep(1)
     entered = 0
     display.lcd_clear()
     display.lcd_display_string("ID: "+ID,1)
+    ledControl("green")
     time.sleep(2)
+    ledControl("off")
     display.lcd_clear()
     display.lcd_display_string("Place Finger...",1)
     print('Waiting for finger...')
+    ledControl("blue")
     #Wait that finger is read
     while(f.readImage() == False):
         pass
     ## Converts read image to characteristics and stored it in charbuffer 1
+    ledControl("green")
     f.convertImage(0x01)
     print('Remove finger...')
     display.lcd_clear()
     display.lcd_display_string("Remove Finger...",1)
     time.sleep(2)
+    ledControl("blue")
     print('Place same finger...')
     display.lcd_clear()
     display.lcd_display_string("Place same",1)
@@ -259,18 +294,23 @@ def enrollFingerprint():
     #Wait until that finger is read again
     while(f.readImage() == False):
         pass
-    ##Converts read image to characterisitics and stored it in charbuffer 2   
+    ##Converts read image to characterisitics and stored it in charbuffer 2 
+    ledControl("green")  
     f.convertImage(0x02)
-    display.lcd_clear()
-    display.lcd_display_string("Enrolling....",1)
     ## Compares the charbuffers
     if( f.compareCharacteristics() == 0):
         display.lcd_clear()
         display.lcd_display_string("Fingers do not",1)
         display.lcd_display_string("match!",2)
+        ledControl("red")
         time.sleep(3)
+        ledControl("off")
+        display.lcd_clear()
         ID = ""
         return
+    display.lcd_clear()
+    display.lcd_display_string("Enrolling....",1)
+    ledControl("blue")
     ##Creates a template
     f.createTemplate()
     ##Saves template at new position number
@@ -288,7 +328,10 @@ def enrollFingerprint():
         display.lcd_clear()
         display.lcd_display_string("Enrollment",1)
         display.lcd_display_string("Succesful!",2)
+        ledControl("green")
         time.sleep(3)
+        ledControl("off")
+        display.lcd_clear()
     else:
         print("Offline mode")
         tempRecord = {"option":"1","ID":str(ID),"fingerprint":str(fingerprint),"checked":0}
@@ -358,20 +401,42 @@ def buttonInput():
             return "s"
         if(GPIO.input(selectButton) == False):
             return "j"
+
+def ledControl(colour):
+    if(colour=="red"):
+        GPIO.output(red,1)
+        GPIO.output(green,0)
+        GPIO.output(blue,0)
+    if(colour=="green"):
+        GPIO.output(green,1)
+        GPIO.output(red,0)
+        GPIO.output(blue,0)
+    if(colour=="blue"):
+        GPIO.output(blue,1)
+        GPIO.output(green,0)
+        GPIO.output(red,0)
+    if(colour=="off"):
+        GPIO.output(blue,0)
+        GPIO.output(green,0)
+        GPIO.output(red,0)
 def checkConnection():
     global status
     try:
         display.lcd_display_string("Contacting",1)
         display.lcd_display_string("server...",2)
+        time.sleep(1)
         r = requests.get(url,timeout=10)
         r.raise_for_status()
         display.lcd_clear()
         display.lcd_display_string("Connection",1)
         display.lcd_display_string("successful!",2)
+        ledControl("green")
         time.sleep(3)
+        ledControl("off")
         display.lcd_clear()
     except Exception as e:
         print("Connection server failed!")
+        ledControl("red")
         display.lcd_display_string("Connection", 1)
         display.lcd_display_string("failed", 2)
         time.sleep(1)
@@ -380,6 +445,7 @@ def checkConnection():
         display.lcd_display_string("Offline mode", 2)
         time.sleep(3)
         display.lcd_clear()
+        ledControl("off")
         status = 1
         print('Exception message: ' + str(e))
 
