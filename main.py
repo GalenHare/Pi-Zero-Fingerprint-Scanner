@@ -298,7 +298,7 @@ def enrollFingerprint():
 
 
 def attendanceRequest(id):
-    payload = {'studentID':id,"date":timeParser('JSFormat'),'courseCode':courseCode,"scannerID":str(scannerID)}
+    payload = {'studentID':id,"date":timeParser('JSFormatZ'),'courseCode':courseCode,"scannerID":str(scannerID)}
     print(payload)
     r = requests.post(url+'api/attendance',json = payload)
     r.raise_for_status()
@@ -309,8 +309,10 @@ def attendanceRequest(id):
 def updateCourse():
     global courseCode,endDay,startMinute,endMinute 
     if status == 0:
+        print("Updating Course")
         currentDateTime = datetime.datetime.now()
         currentMinute = timeParser("currentTimeMins")
+        print(currentMinute)
         if(currentMinute >= endMinute or endDay != int(currentDateTime.strftime("%w"))):
             payload = {"_id":scannerID,"currentDate":timeParser("JSFormat")}
             print(payload)
@@ -345,6 +347,8 @@ def timeParser(option):
         return int(currentDateTime.strftime("%w"))
     elif(option == 'JSFormat'):
         return currentDateTime.strftime("%Y-%m-%dT%X")
+    elif(option == 'JSFormatZ'):
+        return currentDateTime.strftime("%Y-%m-%dT%X")+"Z"
         
 def buttonInput():
     while True:
