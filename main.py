@@ -11,6 +11,14 @@ from pyfingerprint.pyfingerprint import PyFingerprint
 from lcd import lcddriver
 import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 import keyboard
+import pymongo
+
+
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+db = myclient["offlineDB"]
+
+offlineRecords = db["offlineRecords"]
+
 
 
 upButton = 36
@@ -58,7 +66,7 @@ def main():
         option = 0
         while(selection != "j"):
             if(status==0):
-                flushFile()
+                flushDB()
             display.lcd_display_string("1.Enroll", 1)
             display.lcd_display_string("2.Mark", 2)
             print("Please select an option from below")
@@ -215,10 +223,8 @@ def markAttendance():
             time.sleep(2)
             print("Finger not found")
     else:
-        tempString = '{"option":"2","ID":"'+str(ID)+'","fingerprint":"'+str(scannedFinger)+'","current":"'+timeParser('JSFormat')+'"}\n'
-        offlineFile = open("offlineFile.txt","a+")
-        offlineFile.write(tempString)
-        offlineFile.close()
+        tempRecord = {"option":"2","ID":str(ID),"fingerprint":str(scannedFinger),"current":timeParser('JSFormat'),"checked":0}
+        offlineRecords.insert(tempRecord)
     ID = ""
 
 
@@ -285,10 +291,8 @@ def enrollFingerprint():
         time.sleep(3)
     else:
         print("Offline mode")
-        tempString = '{"option":"1","ID":"'+str(ID)+'","fingerprint":"'+str(fingerprint)+'"}\n'
-        offlineFile = open("offlineFile.txt","a+")
-        offlineFile.write(tempString)
-        offlineFile.close()
+        tempRecord = {"option":"1","ID":str(ID),"fingerprint":str(fingerprint),"checked":0}
+        offlineRecords.insert(tempRecord)
     ID = ""
 
 
@@ -385,30 +389,25 @@ def checkConnection2():
         status = 1
         print('Exception message: ' + str(e))
 
-def flushFile():
+def flushDB():
     print("Flushing file")
-    offlineFile = open("offlineFile.txt","a+")
-    offlineFile.seek(0)
-    lines = offlineFile.readlines()
-    for i in range(len(lines)):
-        lines[i]=lines[i].rstrip("\n")
-        lines[i] = json.loads(lines[i])
-        print(lines[i])
-        if(lines[i]['option']=="1"):
-            payload = {'studentID':str(lines[i]['ID']),'fingerprint':str(lines[i]['fingerprint'])}
+    for i in offlineRecords.find({"checked":0}):
+        print(i)
+        if(i['option']=="1"):
+            payload = {'studentID':str(i['ID']),'fingerprint':str(i['fingerprint'])}
             print(payload)
             r = requests.post(url+'api/fingerprint',json = payload)
             r.raise_for_status()
             print(r.text)
             print("Success")
         else:
-            temp2 = lines[i]['fingerprint'].split(", ")
+            temp2 = i['fingerprint'].split(", ")
             temp2[0] = temp2[0].split("[")[1]
             temp2[len(temp2)-1] = temp2[len(temp2)-1].split("]")[0]
             result = list(map(int, temp2))
             print(result)
             f.uploadCharacteristics(0x01,result)
-            temp = url +'api/fingerprint/id/' + str(lines[i]['ID'])
+            temp = url +'api/fingerprint/id/' + str(i['ID'])
             r = requests.get(temp)
             r.raise_for_status()
             response = r.json()
@@ -426,20 +425,19 @@ def flushFile():
                     if(score > 0):
                         break 
                 if (score != 0):
-                    payload = {"_id":scannerID,"currentDate":str(lines[i]['current'])}
+                    payload = {"_id":scannerID,"currentDate":str(i['current'])}
                     r = requests.get(url+'api/scanner/course',params = payload)
                     r.raise_for_status()
                     response = r.json()
                     print("Matched a finger")
                     if(response != []):
-                        payload = {'studentID':id,"date":str(lines[i]['current']),'courseCode':response[0]['courseCode'],"scannerID":str(scannerID)}
+                        payload = {'studentID':id,"date":str(i['current']),'courseCode':response[0]['courseCode'],"scannerID":str(scannerID)}
                         print(payload)
                         r = requests.post(url+'api/attendance',json = payload)
                         r.raise_for_status()
                         print(r.text)
                         print("Success!")
-    offlineFile.truncate(0)
-    offlineFile.close()
+        offlineRecords.update(i,{ "$set": { "checked": 1 } })
 
         
 

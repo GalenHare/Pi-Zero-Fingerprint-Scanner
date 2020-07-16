@@ -1,0 +1,1 @@
+@reboot sh /home/pi/Desktop/Pi-Zero-Fingerprint-Scanner/startupScript.sh >/home/pi/logs/cronlog 2>&1
